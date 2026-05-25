@@ -8,12 +8,14 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'MitRegexKit'
-  s.version          = '1.0.0'
-  s.summary          = '基于链式调用的 Swift 校验库（手机号 / 密码 / 验证码 / 身份证 / 邮箱）'
+  s.version          = '1.1.0'
+  s.summary          = '基于链式调用的 Swift 校验库（手机号 / 密码 / 验证码 / 身份证 / 邮箱），内置 8 种语言文案'
   s.description      = <<-DESC
     MitRegexKit 受 MitRegx 启发，采用 Swift 重写。
     通过 Maker 模式与方法链支持手机号、密码、验证码、身份证、邮箱以及自定义正则的链式校验，
     并提供单条快捷校验 API。任意一条校验失败后会短路终止，便于一次拿到首个错误状态与文案。
+    1.1 起内置简体中文 / 繁体中文 / English / 日本語 / 한국어 / Türkçe / Tiếng Việt / ภาษาไทย
+    八种语言文案，并自动跟随系统语言。
   DESC
   s.homepage         = 'https://github.com/shwrt2016/MitRegexKit'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }

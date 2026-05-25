@@ -8,7 +8,8 @@
 
 - 纯 Swift 实现，零三方依赖（仅 Foundation）
 - 链式调用：`MitRegexMaker().validatePhone(...).validateEmail(...)`
-- 状态枚举 + 可读文本，文案可注入支持本地化
+- 状态枚举 + 可读文本
+- **内置 8 种语言**：简体中文 / 繁體中文 / English / 日本語 / 한국어 / Türkçe / Tiếng Việt / ภาษาไทย，默认跟随系统语言
 - 短路语义：首个失败后续校验自动跳过
 - 提供 `MitRegex.isValidXxx` 等便捷单条校验入口
 - 同时支持 **Swift Package Manager** 与 **CocoaPods**
@@ -101,19 +102,47 @@ MitRegexMaker()
     .validate("年龄≥18", passed: user.age >= 18)
 ```
 
-### 文案本地化
+### 多语言文案
+
+库内置 8 种语言，默认跟随系统语言（`Locale.preferredLanguages` 匹配，未命中回落英文）：
+
+| 语种 | `MitRegexLocale` |
+| --- | --- |
+| 简体中文 | `.simplifiedChinese`（`zh-Hans`） |
+| 繁體中文 | `.traditionalChinese`（`zh-Hant`） |
+| English | `.english`（`en`） |
+| 日本語 | `.japanese`（`ja`） |
+| 한국어 | `.korean`（`ko`） |
+| Türkçe | `.turkish`（`tr`） |
+| Tiếng Việt | `.vietnamese`（`vi`） |
+| ภาษาไทย | `.thai`（`th`） |
 
 ```swift
+// 1. 默认：跟随系统语言（推荐）
+MitRegexMaker().validatePhone("123").statusString
+// zh-Hans 系统：手机号位数不足 11 位
+// en 系统：    Phone number is less than 11 digits
+
+// 2. 强制使用某种语言
 let maker = MitRegexMaker()
+maker.message = .for(.japanese)
+maker.validatePhone("123").statusString
+// 電話番号の桁数が 11 桁に達していません
+
+// 3. 直接拿某语种文案对象
+let kr = MitRegexLocale.korean.message
+print(kr.emailError) // 이메일 형식이 올바르지 않습니다
+
+// 4. 完全自定义文案
 maker.message = MitRegexMessage(
     phoneRight: "Phone OK",
     phoneTooShortFormat: "Phone less than %d digits",
     phoneTooLongFormat: "Phone more than %d digits",
     phoneFormatError: "Phone format invalid"
 )
-maker.validatePhone("123")
-print(maker.statusString) // Phone less than 11 digits
 ```
+
+> 切换语言后，新创建的 `MitRegexMaker` 会用新语言；`MitRegexMessage.auto` 是计算属性，每次访问都会重新读取系统语言，无需重启 App 即可感知系统级别的切换。
 
 ## 与 MitRegx (Objective-C) 的对照
 

@@ -18,12 +18,18 @@ struct ContentView: View {
     @State private var code: String = "123456"
     @State private var personalId: String = "11010519491231002X"
 
-    @State private var chainResultText: String = "未开始校验"
+    @State private var locale: MitRegexLocale = .current
+    @State private var chainState: MitRegexState = .initial
+    @State private var chainResultText: String = MitRegexLocale.current.message.initial
     @State private var chainPassed: Bool = false
+
+    /// 当前语种文案，所有动态文本都通过它格式化。
+    private var message: MitRegexMessage { locale.message }
 
     var body: some View {
         NavigationStack {
             Form {
+                localeSection
                 singleSection
                 chainSection
                 codeSamplesSection
@@ -32,22 +38,53 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - 单条实时校验
+    // MARK: - 语言切换
 
-    private var singleSection: some View {
-        Section("单条实时校验（MitRegex.isValidXxx）") {
-            field(title: "手机号", text: $phone, valid: MitRegex.isValidPhone(phone))
-            field(title: "邮箱",   text: $email, valid: MitRegex.isValidEmail(email))
-            field(title: "密码",   text: $password, valid: MitRegex.isValidPassword(password))
-            field(title: "验证码", text: $code, valid: MitRegex.isValidCode(code))
-            field(title: "身份证", text: $personalId, valid: MitRegex.isValidPersonalId(personalId))
+    private var localeSection: some View {
+        Section("Language / 语言") {
+            Picker("Locale", selection: $locale) {
+                ForEach(MitRegexLocale.allCases, id: \.self) { locale in
+                    Text(label(for: locale)).tag(locale)
+                }
+            }
+            .pickerStyle(.menu)
+            .onChange(of: locale) { _ in
+                refreshChainResult()
+            }
         }
     }
 
-    private func field(title: String, text: Binding<String>, valid: Bool) -> some View {
+    private func label(for locale: MitRegexLocale) -> String {
+        switch locale {
+        case .simplifiedChinese:  return "简体中文"
+        case .traditionalChinese: return "繁體中文"
+        case .english:            return "English"
+        case .japanese:           return "日本語"
+        case .korean:             return "한국어"
+        case .turkish:            return "Türkçe"
+        case .vietnamese:         return "Tiếng Việt"
+        case .thai:               return "ภาษาไทย"
+        }
+    }
+
+    // MARK: - 单条实时校验
+
+    private var singleSection: some View {
+        Section("MitRegex.isValidXxx") {
+            field(icon: "phone.fill",                 text: $phone,      valid: MitRegex.isValidPhone(phone))
+            field(icon: "envelope.fill",              text: $email,      valid: MitRegex.isValidEmail(email))
+            field(icon: "lock.fill",                  text: $password,   valid: MitRegex.isValidPassword(password))
+            field(icon: "number",                     text: $code,       valid: MitRegex.isValidCode(code))
+            field(icon: "person.text.rectangle.fill", text: $personalId, valid: MitRegex.isValidPersonalId(personalId))
+        }
+    }
+
+    private func field(icon: String, text: Binding<String>, valid: Bool) -> some View {
         HStack {
-            Text(title).frame(width: 60, alignment: .leading)
-            TextField(title, text: text)
+            Image(systemName: icon)
+                .frame(width: 24, alignment: .center)
+                .foregroundStyle(.secondary)
+            TextField("", text: text)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
             Image(systemName: valid ? "checkmark.circle.fill" : "xmark.circle.fill")
@@ -75,16 +112,33 @@ struct ContentView: View {
     }
 
     private func runChainValidation() {
-        // 任意一条失败，后续校验自动跳过，状态停留在第一个失败点。
+        let maker = makeChainMaker()
+        chainState = maker.status
+        chainResultText = maker.statusString
+        chainPassed = maker.isPassed
+    }
+
+    /// 切换语言后重新格式化最近一次结果，无需重新校验。
+    private func refreshChainResult() {
+        guard chainState != .initial else {
+            chainResultText = message.initial
+            return
+        }
+        let maker = makeChainMaker()
+        chainResultText = maker.statusString
+        chainPassed = maker.isPassed
+    }
+
+    /// 构造一个使用当前语种文案的 Maker，集中表达「文案随 locale 变化」。
+    private func makeChainMaker() -> MitRegexMaker {
         let maker = MitRegexMaker()
+        maker.message = message
+        return maker
             .validateCode(code)
             .validatePhone(phone)
             .validateEmail(email)
             .validatePassword(password)
             .validatePersonalId(personalId)
-
-        chainResultText = maker.statusString
-        chainPassed = maker.isPassed
     }
 
     // MARK: - 代码示例

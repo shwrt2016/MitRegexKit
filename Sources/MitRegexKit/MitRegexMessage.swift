@@ -71,6 +71,15 @@ public struct MitRegexMessage {
         self.initial = initial
     }
 
-    /// 默认中文文案。
-    public static let `default` = MitRegexMessage()
+    /// 默认文案。从 1.1 起自动跟随系统语言（`.auto`），未匹配的语言回落英文。
+    /// 如需固定语言，请使用 `.for(_:)` 或 `MitRegexLocale.<lang>.message`。
+    public static var `default`: MitRegexMessage { .auto }
+
+    /// 跟随系统语言的文案。每次访问都会重新读取，便于切换语言后即时生效。
+    public static var auto: MitRegexMessage { MitRegexLocale.current.message }
+
+    /// 指定语种文案。等价于 `locale.message`。
+    public static func `for`(_ locale: MitRegexLocale) -> MitRegexMessage {
+        locale.message
+    }
 }

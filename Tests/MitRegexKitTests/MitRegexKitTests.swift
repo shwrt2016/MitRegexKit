@@ -200,4 +200,77 @@ final class MitRegexKitTests: XCTestCase {
         maker.validatePhone("123")
         XCTAssertEqual(maker.statusString, "LESS than 11")
     }
+
+    // MARK: 多语种文案
+
+    func test_locale_allLocalesProvideAllStrings() {
+        // 任一语种的所有字段都不能为空，避免漏翻。
+        for locale in MitRegexLocale.allCases {
+            let m = locale.message
+            XCTAssertFalse(m.phoneRight.isEmpty,         "phoneRight missing for \(locale)")
+            XCTAssertFalse(m.phoneTooLongFormat.isEmpty, "phoneTooLongFormat missing for \(locale)")
+            XCTAssertFalse(m.phoneTooShortFormat.isEmpty,"phoneTooShortFormat missing for \(locale)")
+            XCTAssertFalse(m.phoneFormatError.isEmpty,   "phoneFormatError missing for \(locale)")
+            XCTAssertFalse(m.passwordRight.isEmpty,      "passwordRight missing for \(locale)")
+            XCTAssertFalse(m.passwordTooShort.isEmpty,   "passwordTooShort missing for \(locale)")
+            XCTAssertFalse(m.passwordTooLong.isEmpty,    "passwordTooLong missing for \(locale)")
+            XCTAssertFalse(m.codeRight.isEmpty,          "codeRight missing for \(locale)")
+            XCTAssertFalse(m.codeErrorFormat.isEmpty,    "codeErrorFormat missing for \(locale)")
+            XCTAssertFalse(m.personalIdRight.isEmpty,    "personalIdRight missing for \(locale)")
+            XCTAssertFalse(m.personalIdError.isEmpty,    "personalIdError missing for \(locale)")
+            XCTAssertFalse(m.emailRight.isEmpty,         "emailRight missing for \(locale)")
+            XCTAssertFalse(m.emailError.isEmpty,         "emailError missing for \(locale)")
+            XCTAssertFalse(m.customRightFormat.isEmpty,  "customRightFormat missing for \(locale)")
+            XCTAssertFalse(m.customErrorFormat.isEmpty,  "customErrorFormat missing for \(locale)")
+            XCTAssertFalse(m.initial.isEmpty,            "initial missing for \(locale)")
+        }
+    }
+
+    func test_locale_formatPlaceholdersWork() {
+        // 各语种的 phoneTooShortFormat 都应能正确替换 %d。
+        for locale in MitRegexLocale.allCases {
+            let maker = MitRegexMaker()
+            maker.message = locale.message
+            maker.validatePhone("123")
+            XCTAssertTrue(maker.statusString.contains("11"), "Expected '11' in \(locale): \(maker.statusString)")
+        }
+    }
+
+    func test_locale_customFormatTakesName() {
+        // %@ 占位符必须能被 String 替换，不能保留 %@。
+        for locale in MitRegexLocale.allCases {
+            let maker = MitRegexMaker()
+            maker.message = locale.message
+            maker.validate("InviteCode", passed: false)
+            XCTAssertTrue(maker.statusString.contains("InviteCode"), "Expected name in \(locale): \(maker.statusString)")
+            XCTAssertFalse(maker.statusString.contains("%@"),         "Unreplaced %@ in \(locale): \(maker.statusString)")
+        }
+    }
+
+    func test_locale_bestMatch() {
+        XCTAssertEqual(MitRegexLocale.bestMatch(for: "zh-Hans-CN"), .simplifiedChinese)
+        XCTAssertEqual(MitRegexLocale.bestMatch(for: "zh-CN"),      .simplifiedChinese)
+        XCTAssertEqual(MitRegexLocale.bestMatch(for: "zh-Hant-TW"), .traditionalChinese)
+        XCTAssertEqual(MitRegexLocale.bestMatch(for: "zh-TW"),      .traditionalChinese)
+        XCTAssertEqual(MitRegexLocale.bestMatch(for: "zh-HK"),      .traditionalChinese)
+        XCTAssertEqual(MitRegexLocale.bestMatch(for: "zh"),         .simplifiedChinese)
+        XCTAssertEqual(MitRegexLocale.bestMatch(for: "en-US"),      .english)
+        XCTAssertEqual(MitRegexLocale.bestMatch(for: "ja-JP"),      .japanese)
+        XCTAssertEqual(MitRegexLocale.bestMatch(for: "ko-KR"),      .korean)
+        XCTAssertEqual(MitRegexLocale.bestMatch(for: "tr-TR"),      .turkish)
+        XCTAssertEqual(MitRegexLocale.bestMatch(for: "vi-VN"),      .vietnamese)
+        XCTAssertEqual(MitRegexLocale.bestMatch(for: "th-TH"),      .thai)
+        XCTAssertNil(MitRegexLocale.bestMatch(for: "fr-FR"))
+        XCTAssertNil(MitRegexLocale.bestMatch(for: "de"))
+    }
+
+    func test_locale_messageForReturnsExpectedLanguage() {
+        // 抽样：英文应是 "Email format is valid"，日文应是 "メール..." 开头。
+        XCTAssertEqual(MitRegexMessage.for(.english).emailRight, "Email format is valid")
+        XCTAssertTrue(MitRegexMessage.for(.japanese).emailRight.contains("メール"))
+        XCTAssertTrue(MitRegexMessage.for(.korean).emailRight.contains("이메일"))
+        XCTAssertTrue(MitRegexMessage.for(.turkish).emailRight.contains("posta"))
+        XCTAssertTrue(MitRegexMessage.for(.vietnamese).emailRight.contains("email"))
+        XCTAssertTrue(MitRegexMessage.for(.thai).emailRight.contains("อีเมล"))
+    }
 }
