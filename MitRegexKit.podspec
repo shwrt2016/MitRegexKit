@@ -24,8 +24,8 @@ Pod::Spec.new do |s|
 
   s.ios.deployment_target     = '12.0'
   s.osx.deployment_target     = '10.13'
-  s.tvos.deployment_target    = '12.0'
-  s.watchos.deployment_target = '4.0'
+  # 注：CocoaPods 渠道暂仅支持 iOS / macOS。
+  # tvOS / watchOS 用户请通过 Swift Package Manager 集成，Package.swift 已声明这两个平台。
 
   s.source_files     = 'Sources/MitRegexKit/**/*.swift'
   s.frameworks       = 'Foundation'
